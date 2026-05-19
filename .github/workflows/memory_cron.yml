@@ -1,0 +1,34 @@
+name: Memory Daily Auto Scraper
+
+on:
+  schedule:
+    # 每天世界協調時間 (UTC) 13:30 執行，等同於台灣時間晚上 21:30
+    - cron: '30 13 * * *'
+  workflow_dispatch: # 允許您隨時隨地用手機或電腦登入網頁，點擊按鈕手動強制執行
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+    - name: 1. 複製專案檔案到雲端環境
+      uses: actions/checkout@v3
+
+    - name: 2. 初始化 Python 環境
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: 3. 安裝無頭 Chrome 瀏覽器與相關 Python 套件
+      run: |
+        pip install pandas selenium webdriver-manager beautifulsoup4 matplotlib openpyxl
+
+    - name: 4. 雲端背景強制執行 5 合 1 爬蟲程式
+      run: python update_dram.py
+
+    - name: 5. 將今日最新抓到的 Excel 與 5 張趨勢圖存回 GitHub
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Cloud Bot"
+        git add Memory_Daily_Report.xlsx *_Chart.png
+        git commit -m "自動更新：納入今日 5 大網頁報價與最新趨勢圖" || exit 0
+        git push
