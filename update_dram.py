@@ -161,4 +161,57 @@ def send_line_messaging_api():
         print("💡 未偵測到 LINE 密鑰 (Token 或 User ID)，無法發送通知。")
         return
         
-    url = "https://api.line.
+    url = "https://api.line.me/v2/bot/message/push"
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    text_msg = f"📊 【記憶體報價自動通知】\n📅 日期：{today_str}\n✅ 雲端 5 大網頁報價已抓取完畢，趨勢圖如附！"
+    
+    # 發送文字
+    requests.post(url, headers=headers, json={"to": user_id, "messages": [{"type": "text", "text": text_msg}]})
+    
+    # 發送圖片
+    image_messages = []
+    base_url = f"https://raw.githubusercontent.com/{repo}/main/"
+    for sheet_name in TARGETS.keys():
+        chart_file = f"{sheet_name}_Chart.png"
+        if os.path.exists(chart_file):
+            img_url = f"{base_url}{chart_file}?t={int(time.time())}"
+            image_messages.append({
+                "type": "image",
+                "originalContentUrl": img_url,
+                "previewImageUrl": img_url
+            })
+            
+    if image_messages:
+        r = requests.post(url, headers=headers, json={"to": user_id, "messages": image_messages})
+        if r.status_code == 200:
+            print("🚀 LINE 通知與圖表已成功發送！")
+        else:
+            print(f"❌ 圖片發送失敗，錯誤碼: {r.status_code}, {r.text}")
+
+def main():
+    chrome_options = Options()
+    chrome_options.add_argument("--headless=new")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("window-size=1920,1080")
+    chrome_options.add_argument("user-agent=Mozilla/5.0")
+
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+    all_new_data = {}
+    for sheet_name, url in TARGETS.items():
+        df = get_page_data(driver, url, sheet_name)
+        if df is not None: all_new_data[sheet_name] = df
+    driver.quit()
+    
+    if all_new_data:
+        update_excel_and_draw_charts(all_new_data)
+    else:
+        print("\n❌ 今日無有效資料。")
+
+if __name__ == "__main__":
+    # 🌟 透過系統參數決定要執行爬蟲還是發送通知
+    if len(sys.argv) > 1 and sys.argv[1] == "--notify":
+        print("🔔 開始執行 LINE 通知發送程序...")
+        send_line_messaging_api()
+    else:
+        main()
