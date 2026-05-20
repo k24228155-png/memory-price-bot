@@ -2,7 +2,6 @@ name: Memory Daily Auto Scraper
 
 on:
   schedule:
-    # 每天 UTC 03:00 執行 = 台灣時間 11:00
     - cron: '0 3 * * *'
   workflow_dispatch:
 
@@ -12,6 +11,8 @@ jobs:
     steps:
     - name: 1. 複製專案檔案到雲端
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 0 # 確保抓取完整歷史紀錄以避免合併衝突
 
     - name: 2. 初始化 Python
       uses: actions/setup-python@v4
@@ -25,17 +26,18 @@ jobs:
     - name: 4. 抓取資料與繪圖
       run: python update_dram.py
 
-    - name: 5. 雲端存檔同步 (讓圖片取得公開網址)
+    - name: 5. 雲端存檔同步 (自動排解衝突)
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Cloud Bot"
         git add .
         git commit -m "自動更新：納入今日網頁報價與趨勢圖" || echo "今天沒有新的變更需要儲存"
-        git push || echo "今天沒有新的變更需要上傳"
+        # 🌟 關鍵新增：先將網頁最新版本拉回，避免衝突，再將新資料推上去
+        git pull --rebase origin main || echo "無需同步"
+        git push origin main || echo "今天沒有新的變更需要上傳"
 
     - name: 6. 透過 Messaging API 發送 LINE 通知
       env:
         LINE_TOKEN: ${{ secrets.LINE_TOKEN }}
         LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
-      # 透過 --notify 參數，讓同一支程式執行發送通知的功能
       run: python update_dram.py --notify
