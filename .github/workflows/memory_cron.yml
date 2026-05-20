@@ -2,33 +2,40 @@ name: Memory Daily Auto Scraper
 
 on:
   schedule:
-    # 每天世界協調時間 (UTC) 13:30 執行，等同於台灣時間晚上 21:30
-    - cron: '30 13 * * *'
-  workflow_dispatch: # 允許您隨時隨地用手機或電腦登入網頁，點擊按鈕手動強制執行
+    # 每天 UTC 03:00 執行 = 台灣時間 11:00
+    - cron: '0 3 * * *'
+  workflow_dispatch:
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
     steps:
-    - name: 1. 複製專案檔案到雲端環境
+    - name: 1. 複製專案檔案到雲端
       uses: actions/checkout@v3
 
-    - name: 2. 初始化 Python 環境
+    - name: 2. 初始化 Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
 
-    - name: 3. 安裝無頭 Chrome 瀏覽器與相關 Python 套件
+    - name: 3. 安裝套件
       run: |
-        pip install pandas selenium webdriver-manager beautifulsoup4 matplotlib openpyxl
+        pip install pandas selenium webdriver-manager beautifulsoup4 matplotlib openpyxl requests
 
-    - name: 4. 雲端背景強制執行 5 合 1 爬蟲程式
+    - name: 4. 抓取資料與繪圖
       run: python update_dram.py
 
-    - name: 5. 雲端存檔與防呆機制
+    - name: 5. 雲端存檔同步 (讓圖片取得公開網址)
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Cloud Bot"
         git add .
         git commit -m "自動更新：納入今日網頁報價與趨勢圖" || echo "今天沒有新的變更需要儲存"
         git push || echo "今天沒有新的變更需要上傳"
+
+    - name: 6. 透過 Messaging API 發送 LINE 通知
+      env:
+        LINE_TOKEN: ${{ secrets.LINE_TOKEN }}
+        LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+      # 透過 --notify 參數，讓同一支程式執行發送通知的功能
+      run: python update_dram.py --notify
