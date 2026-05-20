@@ -12,7 +12,7 @@ jobs:
     - name: 1. 複製專案檔案到雲端
       uses: actions/checkout@v3
       with:
-        fetch-depth: 0 # 確保抓取完整歷史紀錄以避免合併衝突
+        fetch-depth: 0
 
     - name: 2. 初始化 Python
       uses: actions/setup-python@v4
@@ -32,7 +32,6 @@ jobs:
         git config --local user.name "GitHub Cloud Bot"
         git add .
         git commit -m "自動更新：納入今日網頁報價與趨勢圖" || echo "今天沒有新的變更需要儲存"
-        # 🌟 關鍵新增：先將網頁最新版本拉回，避免衝突，再將新資料推上去
         git pull --rebase origin main || echo "無需同步"
         git push origin main || echo "今天沒有新的變更需要上傳"
 
