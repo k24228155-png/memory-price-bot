@@ -25,10 +25,10 @@ jobs:
     - name: 4. 雲端背景強制執行 5 合 1 爬蟲程式
       run: python update_dram.py
 
-    - name: 5. 將今日最新抓到的 Excel 與 5 張趨勢圖存回 GitHub
+    - name: 5. 雲端存檔與防呆機制
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Cloud Bot"
-        git add Memory_Daily_Report.xlsx *_Chart.png
-        git commit -m "自動更新：納入今日 5 大網頁報價與最新趨勢圖" || exit 0
-        git push
+        git add .
+        git commit -m "自動更新：納入今日網頁報價與趨勢圖" || echo "今天沒有新的變更需要儲存"
+        git push || echo "今天沒有新的變更需要上傳"
