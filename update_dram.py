@@ -211,7 +211,7 @@ def main():
 if __name__ == "__main__":
     # 🌟 透過系統參數決定要執行爬蟲還是發送通知
     if len(sys.argv) > 1 and sys.argv[1] == "--notify":
-        print("🔔 開始執行 LINE 通知發送程序...")
+        print("🔔 爬蟲與存檔已完成，開始執行 LINE 通知發送程序...")
         send_line_messaging_api()
     else:
         main()
