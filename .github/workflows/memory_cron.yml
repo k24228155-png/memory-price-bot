@@ -2,7 +2,8 @@ name: Memory Daily Auto Scraper
 
 on:
   schedule:
-    - cron: '0 3 * * *'
+    # UTC 03:03 = 台灣時間 11:03，1-5 代表每週一至週五執行
+    - cron: '3 3 * * 1-5'
   workflow_dispatch:
 
 jobs:
